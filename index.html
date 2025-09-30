@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DraftKings Player Prop Command Center</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg-primary: #080b12;
+      --bg-secondary: #121826;
+      --bg-tertiary: #1e2a3f;
+      --accent: #4ad7d1;
+      --accent-soft: rgba(74, 215, 209, 0.12);
+      --text-primary: #f7f9fc;
+      --text-secondary: #9aa6bf;
+      --text-muted: #5f6b84;
+      --danger: #ff7b7b;
+      --success: #69f0ae;
+      font-family: "Inter", "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top left, rgba(74, 215, 209, 0.1), transparent 45%),
+        radial-gradient(circle at bottom right, rgba(142, 68, 173, 0.12), transparent 45%),
+        var(--bg-primary);
+      color: var(--text-primary);
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 32px 20px 24px;
+      text-align: center;
+      background: linear-gradient(135deg, rgba(74, 215, 209, 0.18), rgba(142, 68, 173, 0.18));
+      border-bottom: 1px solid rgba(148, 180, 255, 0.12);
+      box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: clamp(1.9rem, 3vw, 2.8rem);
+      letter-spacing: 0.04em;
+    }
+
+    header p {
+      margin: 10px auto 0;
+      max-width: 640px;
+      color: var(--text-secondary);
+      font-size: 1rem;
+    }
+
+    main {
+      flex: 1;
+      width: min(1200px, 92vw);
+      margin: 30px auto 60px;
+      display: flex;
+      flex-direction: column;
+      gap: 26px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    button {
+      background: var(--accent);
+      border: none;
+      color: #02161a;
+      padding: 12px 22px;
+      border-radius: 999px;
+      font-size: 1rem;
+      letter-spacing: 0.02em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+      box-shadow: 0 10px 30px rgba(74, 215, 209, 0.25);
+    }
+
+    button:hover {
+      transform: translateY(-1px) scale(1.01);
+      box-shadow: 0 12px 32px rgba(74, 215, 209, 0.3);
+    }
+
+    button:disabled {
+      background: rgba(154, 166, 191, 0.26);
+      color: var(--text-muted);
+      cursor: wait;
+      box-shadow: none;
+      transform: none;
+    }
+
+    button.secondary {
+      background: rgba(74, 215, 209, 0.16);
+      color: var(--accent);
+      box-shadow: none;
+    }
+
+    button.secondary:hover {
+      background: rgba(74, 215, 209, 0.22);
+      box-shadow: none;
+    }
+
+    .status {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status span.dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: inline-flex;
+      box-shadow: 0 0 8px rgba(74, 215, 209, 0.7);
+    }
+
+    section {
+      background: rgba(18, 24, 38, 0.88);
+      backdrop-filter: blur(18px);
+      border-radius: 18px;
+      padding: 22px clamp(16px, 2.4vw, 28px);
+      box-shadow: 0 18px 38px rgba(0, 0, 0, 0.32);
+      border: 1px solid rgba(74, 215, 209, 0.14);
+    }
+
+    section header {
+      text-align: left;
+      padding: 0;
+      background: none;
+      box-shadow: none;
+      border: none;
+      margin-bottom: 20px;
+    }
+
+    section header h2 {
+      margin: 0;
+      font-size: clamp(1.3rem, 2.5vw, 1.8rem);
+    }
+
+    section header p {
+      margin: 6px 0 0;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    .grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .grid.three {
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    }
+
+    .card {
+      background: linear-gradient(160deg, rgba(30, 42, 63, 0.95), rgba(10, 16, 25, 0.9));
+      border-radius: 16px;
+      padding: 18px;
+      border: 1px solid rgba(148, 180, 255, 0.12);
+      box-shadow: inset 0 0 0 1px rgba(74, 215, 209, 0.05);
+      transition: transform 0.25s ease, border 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(74, 215, 209, 0.32);
+    }
+
+    .card h3 {
+      margin: 0 0 6px;
+      font-size: 1.05rem;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+
+    .card h4 {
+      margin: 0 0 10px;
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      background: rgba(74, 215, 209, 0.16);
+      color: var(--accent);
+    }
+
+    .metrics {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .metric strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .parlay-picks {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 14px 0 16px;
+      padding-left: 6px;
+      border-left: 2px solid rgba(74, 215, 209, 0.22);
+    }
+
+    .parlay-picks span {
+      font-size: 0.92rem;
+      color: var(--text-secondary);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 30px 0;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 18px;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      border-top: 1px solid rgba(148, 180, 255, 0.1);
+      background: rgba(2, 10, 19, 0.85);
+    }
+
+    @media (max-width: 680px) {
+      main {
+        width: min(100%, 94vw);
+        margin: 24px auto 50px;
+      }
+
+      .card {
+        padding: 16px;
+      }
+
+      .metrics {
+        gap: 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>DraftKings Player Prop Command Center</h1>
+    <p>
+      Live DraftKings player props and auto-built Same Game/All Game parlays backed by implied probability and payout
+      analytics.
+    </p>
+    <div class="controls">
+      <button id="refresh-button">🔄 Refresh Live Feed</button>
+      <button id="configure-api" class="secondary">🔐 Set API Key</button>
+      <div class="status" id="status-indicator">
+        <span class="dot"></span>
+        <span>Updated less than a minute ago</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="parlay-section">
+      <header>
+        <h2>DraftKings Bet Builder</h2>
+        <p>Multi-leg cards assembled from the sharpest DraftKings player props with real-time payout projections.</p>
+      </header>
+      <div class="grid" id="parlay-cards"></div>
+    </section>
+
+    <section id="player-props-section">
+      <header>
+        <h2>Player Props Radar</h2>
+        <p>Live DraftKings player prop edges with implied win rates and projected payouts per $100 stake.</p>
+      </header>
+      <div class="grid three" id="player-props"></div>
+    </section>
+  </main>
+
+  <footer>
+    DraftKings Player Prop Command Center © 2025 · Data refreshed every 6 hours automatically · Last API sync: <span id="last-updated">—</span>
+  </footer>
+
+  <script>
+    const API_KEY_STORAGE_KEY = "sports-picks-intel:odds-api-key";
+    let apiKey = localStorage.getItem(API_KEY_STORAGE_KEY) || "";
+    const REGION = "us";
+    const BOOKMAKERS = ["draftkings"];
+
+    const PLAYER_PROP_SPORTS = [
+      { label: "NFL", key: "americanfootball_nfl" },
+      { label: "NBA", key: "basketball_nba" },
+      { label: "MLB", key: "baseball_mlb" }
+    ];
+
+    const PARLAY_LEG_SIZE = 3;
+    const MAX_PARLAYS = 4;
+    const PARLAY_STAKE = 100;
+    const PARLAY_CANDIDATE_POOL = 12;
+    const MAX_VISIBLE_PROPS = 18;
+
+    const refreshButton = document.getElementById("refresh-button");
+    const statusIndicator = document.getElementById("status-indicator");
+    const configureApiButton = document.getElementById("configure-api");
+    const lastUpdatedField = document.getElementById("last-updated");
+    const parlayContainer = document.getElementById("parlay-cards");
+    const playerPropsContainer = document.getElementById("player-props");
+
+    refreshButton.addEventListener("click", () => loadDashboard(true));
+    configureApiButton.addEventListener("click", () => {
+      const value = prompt("Enter your The Odds API key", apiKey);
+      if (value === null) return;
+
+      const trimmed = value.trim();
+      if (trimmed) {
+        apiKey = trimmed;
+        localStorage.setItem(API_KEY_STORAGE_KEY, apiKey);
+        setStatus("API key saved. Loading markets…", "loading");
+        loadDashboard(true);
+      } else {
+        apiKey = "";
+        localStorage.removeItem(API_KEY_STORAGE_KEY);
+        renderRequiresApiKey();
+        setStatus("Add your The Odds API key to fetch live DraftKings props.", "warning");
+        lastUpdatedField.textContent = "—";
+        refreshButton.disabled = true;
+      }
+    });
+
+    function americanToDecimal(odds) {
+      return odds > 0 ? 1 + odds / 100 : 1 + 100 / Math.abs(odds);
+    }
+
+    function decimalToAmerican(decimal) {
+      if (decimal >= 2) {
+        return Math.round((decimal - 1) * 100);
+      }
+      return Math.round(-100 / (decimal - 1));
+    }
+
+    function impliedProbability(odds) {
+      return odds > 0 ? 100 / (odds + 100) : -odds / (-odds + 100);
+    }
+
+    function formatPercent(value) {
+      return (value * 100).toFixed(1) + "%";
+    }
+
+    function formatCurrency(value) {
+      return "$" + value.toFixed(2);
+    }
+
+    async function fetchOdds(sportKey, markets = []) {
+      if (!apiKey) return [];
+      const url = new URL(`https://api.the-odds-api.com/v4/sports/${sportKey}/odds/`);
+      url.searchParams.set("regions", REGION);
+      url.searchParams.set("oddsFormat", "american");
+      url.searchParams.set("apiKey", apiKey);
+      if (markets?.length) {
+        url.searchParams.set("markets", markets.join(","));
+      }
+      if (BOOKMAKERS.length) {
+        url.searchParams.set("bookmakers", BOOKMAKERS.join(","));
+      }
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          console.error("Odds fetch failed", response.status, response.statusText);
+          return [];
+        }
+        return await response.json();
+      } catch (error) {
+        console.error("Network error while fetching odds", error);
+        return [];
+      }
+    }
+
+    function buildParlays(candidates, legSize, limit) {
+      const combos = [];
+
+      function backtrack(start, path, usedEvents, usedPlayers) {
+        if (path.length === legSize) {
+          combos.push([...path]);
+          return;
+        }
+
+        for (let i = start; i < candidates.length; i++) {
+          const pick = candidates[i];
+          if (usedEvents.has(pick.eventId) || usedPlayers.has(pick.player)) continue;
+          path.push(pick);
+          usedEvents.add(pick.eventId);
+          usedPlayers.add(pick.player);
+          backtrack(i + 1, path, usedEvents, usedPlayers);
+          path.pop();
+          usedEvents.delete(pick.eventId);
+          usedPlayers.delete(pick.player);
+        }
+      }
+
+      backtrack(0, [], new Set(), new Set());
+
+      const parlayCards = combos.map((combo) => {
+        const combinedDecimal = combo.reduce((acc, pick) => acc * pick.decimalOdds, 1);
+        const combinedImplied = combo.reduce((acc, pick) => acc * pick.implied, 1);
+        const american = decimalToAmerican(combinedDecimal);
+        const payout = PARLAY_STAKE * (combinedDecimal - 1);
+        const averageEdge = combo.reduce((acc, pick) => acc + pick.edgeScore, 0) / combo.length;
+
+        return {
+          legs: combo,
+          legsCount: combo.length,
+          combinedDecimal,
+          combinedImplied,
+          americanOdds: american,
+          projectedPayout: payout,
+          averageEdge
+        };
+      });
+
+      return parlayCards
+        .sort((a, b) => b.averageEdge - a.averageEdge)
+        .slice(0, limit);
+    }
+
+    function extractPlayerProps(events, sportLabel) {
+      const propsMap = new Map();
+
+      for (const game of events) {
+        if (!game.bookmakers?.length) continue;
+
+        for (const bookmaker of game.bookmakers) {
+          for (const market of bookmaker.markets || []) {
+            if (!market?.outcomes?.length) continue;
+
+            for (const outcome of market.outcomes) {
+              const key = `${game.id}-${outcome.description || outcome.name}-${market.key}`;
+              const implied = impliedProbability(outcome.price);
+              const decimal = americanToDecimal(outcome.price);
+              const entry = propsMap.get(key);
+              const dataPoint = {
+                sport: sportLabel,
+                event: `${game.away_team} @ ${game.home_team}`,
+                eventId: game.id,
+                player: outcome.description || outcome.name,
+                propLabel: formatMarketLabel(market.key),
+                odds: outcome.price,
+                implied,
+                decimalOdds: decimal,
+                bookmaker: bookmaker.title,
+                projectedPayout: PARLAY_STAKE * (decimal - 1),
+                edgeScore: decimal * (1 - implied)
+              };
+
+              if (!entry || outcome.price > entry.odds) {
+                propsMap.set(key, dataPoint);
+              }
+            }
+          }
+        }
+      }
+
+      return Array.from(propsMap.values())
+        .sort((a, b) => b.edgeScore - a.edgeScore);
+    }
+
+    function formatMarketLabel(key) {
+      return key
+        .replace(/_/g, " ")
+        .replace(/\b([a-z])/g, (match) => match.toUpperCase())
+        .replace("Player", "").trim();
+    }
+
+    function renderParlays(parlays) {
+      if (!parlays.length) {
+        parlayContainer.innerHTML = `<div class="empty-state">Not enough elite edges to build parlays right now.</div>`;
+        return;
+      }
+
+      parlayContainer.innerHTML = parlays
+        .map((parlay, index) => {
+          const legsHtml = parlay.legs
+            .map(
+              (leg, idx) => `
+                <span>${idx + 1}. ${leg.sport} · ${leg.event} · ${leg.player} ${leg.propLabel ? "- " + leg.propLabel : ""} (${leg.odds > 0 ? "+" + leg.odds : leg.odds})</span>
+              `
+            )
+            .join("");
+
+          return `
+            <article class="card">
+              <div class="badge">Parlay ${index + 1} · ${parlay.legsCount} Legs</div>
+              <h3>${parlay.americanOdds > 0 ? "+" + parlay.americanOdds : parlay.americanOdds} Odds</h3>
+              <div class="parlay-picks">${legsHtml}</div>
+              <div class="metrics">
+                <div class="metric"><span>Approx Hit Rate</span><strong>${formatPercent(parlay.combinedImplied)}</strong></div>
+                <div class="metric"><span>Projected Profit (\$${PARLAY_STAKE})</span><strong>${formatCurrency(parlay.projectedPayout)}</strong></div>
+                <div class="metric"><span>Average Edge Rating</span><strong>${parlay.averageEdge.toFixed(2)}</strong></div>
+              </div>
+            </article>
+          `;
+        })
+        .join("");
+    }
+
+    function renderPlayerProps(props) {
+      if (!props.length) {
+        playerPropsContainer.innerHTML = `<div class="empty-state">DraftKings player props are quiet right now. Lines typically drop closer to tip-off/kickoff.</div>`;
+        return;
+      }
+
+      playerPropsContainer.innerHTML = props
+        .map(
+          (prop) => `
+          <article class="card">
+            <div class="badge">${prop.sport} · ${prop.propLabel}</div>
+            <h3>${prop.player}</h3>
+            <h4>${prop.event}</h4>
+            <div class="metrics">
+              <div class="metric"><span>Book</span><strong>${prop.bookmaker}</strong></div>
+              <div class="metric"><span>Odds</span><strong>${prop.odds > 0 ? "+" + prop.odds : prop.odds}</strong></div>
+              <div class="metric"><span>Implied Win Rate</span><strong>${formatPercent(prop.implied)}</strong></div>
+              <div class="metric"><span>Edge Rating</span><strong>${prop.edgeScore.toFixed(2)}</strong></div>
+              <div class="metric"><span>Payout (\$100)</span><strong>${formatCurrency(prop.projectedPayout)}</strong></div>
+            </div>
+          </article>
+        `
+        )
+        .join("");
+    }
+
+    function renderRequiresApiKey() {
+      const message = '<div class="empty-state">Enter your The Odds API key (top right) to pull in live DraftKings props and parlays.</div>';
+      parlayContainer.innerHTML = message;
+      playerPropsContainer.innerHTML = message;
+    }
+
+    function setStatus(message, tone = "ready") {
+      const dotColor =
+        tone === "ready"
+          ? "var(--accent)"
+          : tone === "warning"
+          ? "#f7d154"
+          : tone === "error"
+          ? "var(--danger)"
+          : "var(--text-muted)";
+      statusIndicator.innerHTML = `<span class="dot" style="background: ${dotColor};"></span><span>${message}</span>`;
+    }
+
+    function setLoadingState(isLoading) {
+      if (!apiKey) {
+        refreshButton.disabled = true;
+        setStatus("Add your The Odds API key to fetch live DraftKings props.", "warning");
+        return;
+      }
+
+      refreshButton.disabled = isLoading;
+      if (isLoading) {
+        setStatus("Updating live feed…", "loading");
+      } else {
+        setStatus(`Updated ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`);
+      }
+    }
+
+    async function loadDashboard(manual = false) {
+      if (!apiKey) {
+        renderRequiresApiKey();
+        lastUpdatedField.textContent = "—";
+        return;
+      }
+
+      setLoadingState(true);
+
+      const playerPropResults = await Promise.all(
+        PLAYER_PROP_SPORTS.map(async (sport) => {
+          const propsOdds = await fetchOdds(sport.key, ["player_props"]);
+          return extractPlayerProps(propsOdds, sport.label);
+        })
+      );
+
+      const allProps = playerPropResults.flat().sort((a, b) => b.edgeScore - a.edgeScore);
+      renderPlayerProps(allProps.slice(0, MAX_VISIBLE_PROPS));
+
+      const parlayCandidates = allProps.slice(0, PARLAY_CANDIDATE_POOL);
+      const parlays = buildParlays(parlayCandidates, PARLAY_LEG_SIZE, MAX_PARLAYS);
+      renderParlays(parlays);
+
+      const now = new Date();
+      lastUpdatedField.textContent = now.toLocaleString();
+      setLoadingState(false);
+
+      if (manual) {
+        refreshButton.blur();
+      }
+    }
+
+    if (!apiKey) {
+      renderRequiresApiKey();
+      setStatus("Add your The Odds API key to fetch live DraftKings props.", "warning");
+      refreshButton.disabled = true;
+    } else {
+      loadDashboard();
+    }
+    setInterval(loadDashboard, 6 * 60 * 60 * 1000);
+  </script>
+</body>
+</html>
