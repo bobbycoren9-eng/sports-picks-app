@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sports Picks Intelligence Hub</title>
+  <title>DraftKings Player Prop Command Center</title>
   <style>
     :root {
       color-scheme: dark;
@@ -274,13 +274,13 @@
 </head>
 <body>
   <header>
-    <h1>Sports Picks Intelligence Hub</h1>
+    <h1>DraftKings Player Prop Command Center</h1>
     <p>
-      Live DraftKings-style straight bets, premium parlay builders, and high-upside player props sourced from
-      up-to-the-minute odds and implied probability analytics.
+      Live DraftKings player props and auto-built Same Game/All Game parlays backed by implied probability and payout
+      analytics.
     </p>
     <div class="controls">
-      <button id="refresh-button">🔄 Refresh Live Board</button>
+      <button id="refresh-button">🔄 Refresh Live Feed</button>
       <button id="configure-api" class="secondary">🔐 Set API Key</button>
       <div class="status" id="status-indicator">
         <span class="dot"></span>
@@ -290,18 +290,10 @@
   </header>
 
   <main>
-    <section id="straight-bets-section">
-      <header>
-        <h2>Top Straight Bets</h2>
-        <p>Value-ranked moneyline, spread, and total opportunities across today's board.</p>
-      </header>
-      <div class="grid three" id="straight-bets"></div>
-    </section>
-
     <section id="parlay-section">
       <header>
-        <h2>High-Probability Parlays</h2>
-        <p>Algorithmically constructed multi-leg cards with implied probability and payout projections.</p>
+        <h2>DraftKings Bet Builder</h2>
+        <p>Multi-leg cards assembled from the sharpest DraftKings player props with real-time payout projections.</p>
       </header>
       <div class="grid" id="parlay-cards"></div>
     </section>
@@ -309,45 +301,38 @@
     <section id="player-props-section">
       <header>
         <h2>Player Props Radar</h2>
-        <p>Live prop edges with implied win rates and projected payouts per 100 stake.</p>
+        <p>Live DraftKings player prop edges with implied win rates and projected payouts per $100 stake.</p>
       </header>
       <div class="grid three" id="player-props"></div>
     </section>
   </main>
 
   <footer>
-    Sports Picks Intelligence Hub © 2025 · Data refreshed every 6 hours automatically · Last API sync: <span id="last-updated">—</span>
+    DraftKings Player Prop Command Center © 2025 · Data refreshed every 6 hours automatically · Last API sync: <span id="last-updated">—</span>
   </footer>
 
   <script>
     const API_KEY_STORAGE_KEY = "sports-picks-intel:odds-api-key";
     let apiKey = localStorage.getItem(API_KEY_STORAGE_KEY) || "";
     const REGION = "us";
-    const BOOKMAKERS = ["draftkings", "fanduel", "betmgm", "pointsbetus"];
-    const CORE_MARKETS = ["h2h", "spreads", "totals"];
-
-    const SPORTS = [
-      { label: "NFL", key: "americanfootball_nfl" },
-      { label: "NBA", key: "basketball_nba" },
-      { label: "MLB", key: "baseball_mlb" },
-      { label: "NHL", key: "icehockey_nhl" }
-    ];
+    const BOOKMAKERS = ["draftkings"];
 
     const PLAYER_PROP_SPORTS = [
       { label: "NFL", key: "americanfootball_nfl" },
-      { label: "NBA", key: "basketball_nba" }
+      { label: "NBA", key: "basketball_nba" },
+      { label: "MLB", key: "baseball_mlb" }
     ];
 
-    const MAX_PICKS_PER_SPORT = 3;
     const PARLAY_LEG_SIZE = 3;
     const MAX_PARLAYS = 4;
     const PARLAY_STAKE = 100;
+    const PARLAY_CANDIDATE_POOL = 12;
+    const MAX_VISIBLE_PROPS = 18;
 
     const refreshButton = document.getElementById("refresh-button");
     const statusIndicator = document.getElementById("status-indicator");
     const configureApiButton = document.getElementById("configure-api");
     const lastUpdatedField = document.getElementById("last-updated");
-    const straightBetsContainer = document.getElementById("straight-bets");
     const parlayContainer = document.getElementById("parlay-cards");
     const playerPropsContainer = document.getElementById("player-props");
 
@@ -366,7 +351,7 @@
         apiKey = "";
         localStorage.removeItem(API_KEY_STORAGE_KEY);
         renderRequiresApiKey();
-        setStatus("Add your The Odds API key to fetch live odds.", "warning");
+        setStatus("Add your The Odds API key to fetch live DraftKings props.", "warning");
         lastUpdatedField.textContent = "—";
         refreshButton.disabled = true;
       }
@@ -395,7 +380,7 @@
       return "$" + value.toFixed(2);
     }
 
-    async function fetchOdds(sportKey, markets = CORE_MARKETS) {
+    async function fetchOdds(sportKey, markets = []) {
       if (!apiKey) return [];
       const url = new URL(`https://api.the-odds-api.com/v4/sports/${sportKey}/odds/`);
       url.searchParams.set("regions", REGION);
@@ -421,62 +406,10 @@
       }
     }
 
-    function extractBestPicks(events, sportLabel) {
-      const picks = [];
-
-      for (const game of events) {
-        if (!game.bookmakers?.length) continue;
-
-        for (const bookmaker of game.bookmakers) {
-          for (const market of bookmaker.markets || []) {
-            if (!market?.outcomes?.length) continue;
-
-            const bestOutcome = market.outcomes.reduce((best, outcome) => {
-              const implied = impliedProbability(outcome.price);
-              const decimal = americanToDecimal(outcome.price);
-              const edgeScore = decimal - implied * decimal;
-              if (!best || edgeScore > best.edgeScore) {
-                return {
-                  ...outcome,
-                  edgeScore,
-                  implied,
-                  decimal,
-                  bookmaker: bookmaker.title,
-                  marketKey: market.key
-                };
-              }
-              return best;
-            }, null);
-
-            if (!bestOutcome) continue;
-
-            picks.push({
-              sport: sportLabel,
-              gameId: game.id,
-              commence: game.commence_time,
-              matchUp: `${game.away_team} @ ${game.home_team}`,
-              market: market.key.toUpperCase(),
-              pick: bestOutcome.name,
-              odds: bestOutcome.price,
-              decimalOdds: bestOutcome.decimal,
-              implied: bestOutcome.implied,
-              bookmaker: bestOutcome.bookmaker,
-              edgeScore: bestOutcome.edgeScore,
-              payout: PARLAY_STAKE * (bestOutcome.decimal - 1)
-            });
-          }
-        }
-      }
-
-      return picks
-        .sort((a, b) => b.edgeScore - a.edgeScore)
-        .slice(0, MAX_PICKS_PER_SPORT);
-    }
-
     function buildParlays(candidates, legSize, limit) {
       const combos = [];
 
-      function backtrack(start, path, usedGames) {
+      function backtrack(start, path, usedEvents, usedPlayers) {
         if (path.length === legSize) {
           combos.push([...path]);
           return;
@@ -484,20 +417,22 @@
 
         for (let i = start; i < candidates.length; i++) {
           const pick = candidates[i];
-          if (usedGames.has(pick.gameId)) continue;
+          if (usedEvents.has(pick.eventId) || usedPlayers.has(pick.player)) continue;
           path.push(pick);
-          usedGames.add(pick.gameId);
-          backtrack(i + 1, path, usedGames);
+          usedEvents.add(pick.eventId);
+          usedPlayers.add(pick.player);
+          backtrack(i + 1, path, usedEvents, usedPlayers);
           path.pop();
-          usedGames.delete(pick.gameId);
+          usedEvents.delete(pick.eventId);
+          usedPlayers.delete(pick.player);
         }
       }
 
-      backtrack(0, [], new Set());
+      backtrack(0, [], new Set(), new Set());
 
       const parlayCards = combos.map((combo) => {
         const combinedDecimal = combo.reduce((acc, pick) => acc * pick.decimalOdds, 1);
-        const combinedImplied = 1 / combinedDecimal;
+        const combinedImplied = combo.reduce((acc, pick) => acc * pick.implied, 1);
         const american = decimalToAmerican(combinedDecimal);
         const payout = PARLAY_STAKE * (combinedDecimal - 1);
         const averageEdge = combo.reduce((acc, pick) => acc + pick.edgeScore, 0) / combo.length;
@@ -529,20 +464,22 @@
             if (!market?.outcomes?.length) continue;
 
             for (const outcome of market.outcomes) {
-              const key = `${outcome.description || outcome.name}-${market.key}`;
+              const key = `${game.id}-${outcome.description || outcome.name}-${market.key}`;
               const implied = impliedProbability(outcome.price);
               const decimal = americanToDecimal(outcome.price);
               const entry = propsMap.get(key);
               const dataPoint = {
                 sport: sportLabel,
                 event: `${game.away_team} @ ${game.home_team}`,
+                eventId: game.id,
                 player: outcome.description || outcome.name,
                 propLabel: formatMarketLabel(market.key),
                 odds: outcome.price,
                 implied,
                 decimalOdds: decimal,
                 bookmaker: bookmaker.title,
-                projectedPayout: PARLAY_STAKE * (decimal - 1)
+                projectedPayout: PARLAY_STAKE * (decimal - 1),
+                edgeScore: decimal * (1 - implied)
               };
 
               if (!entry || outcome.price > entry.odds) {
@@ -554,8 +491,7 @@
       }
 
       return Array.from(propsMap.values())
-        .sort((a, b) => a.implied - b.implied)
-        .slice(0, 9);
+        .sort((a, b) => b.edgeScore - a.edgeScore);
     }
 
     function formatMarketLabel(key) {
@@ -563,31 +499,6 @@
         .replace(/_/g, " ")
         .replace(/\b([a-z])/g, (match) => match.toUpperCase())
         .replace("Player", "").trim();
-    }
-
-    function renderStraightBets(picks) {
-      if (!picks.length) {
-        straightBetsContainer.innerHTML = `<div class="empty-state">No straight bet edges detected. Try refreshing shortly before games begin.</div>`;
-        return;
-      }
-
-      straightBetsContainer.innerHTML = picks
-        .map(
-          (pick) => `
-          <article class="card">
-            <div class="badge">${pick.sport} · ${pick.market}</div>
-            <h3>${pick.matchUp}</h3>
-            <h4>${pick.pick}</h4>
-            <div class="metrics">
-              <div class="metric"><span>Book</span><strong>${pick.bookmaker}</strong></div>
-              <div class="metric"><span>Odds</span><strong>${pick.odds > 0 ? "+" + pick.odds : pick.odds}</strong></div>
-              <div class="metric"><span>Implied Win Rate</span><strong>${formatPercent(pick.implied)}</strong></div>
-              <div class="metric"><span>Payout (\$100)</span><strong>${formatCurrency(pick.payout)}</strong></div>
-            </div>
-          </article>
-        `
-        )
-        .join("");
     }
 
     function renderParlays(parlays) {
@@ -601,7 +512,7 @@
           const legsHtml = parlay.legs
             .map(
               (leg, idx) => `
-                <span>${idx + 1}. ${leg.sport} · ${leg.matchUp} · ${leg.pick} (${leg.odds > 0 ? "+" + leg.odds : leg.odds})</span>
+                <span>${idx + 1}. ${leg.sport} · ${leg.event} · ${leg.player} ${leg.propLabel ? "- " + leg.propLabel : ""} (${leg.odds > 0 ? "+" + leg.odds : leg.odds})</span>
               `
             )
             .join("");
@@ -612,7 +523,7 @@
               <h3>${parlay.americanOdds > 0 ? "+" + parlay.americanOdds : parlay.americanOdds} Odds</h3>
               <div class="parlay-picks">${legsHtml}</div>
               <div class="metrics">
-                <div class="metric"><span>Combined Implied</span><strong>${formatPercent(parlay.combinedImplied)}</strong></div>
+                <div class="metric"><span>Approx Hit Rate</span><strong>${formatPercent(parlay.combinedImplied)}</strong></div>
                 <div class="metric"><span>Projected Profit (\$${PARLAY_STAKE})</span><strong>${formatCurrency(parlay.projectedPayout)}</strong></div>
                 <div class="metric"><span>Average Edge Rating</span><strong>${parlay.averageEdge.toFixed(2)}</strong></div>
               </div>
@@ -624,7 +535,7 @@
 
     function renderPlayerProps(props) {
       if (!props.length) {
-        playerPropsContainer.innerHTML = `<div class="empty-state">Player prop feeds are quiet. Props usually populate closer to tip-off/kickoff.</div>`;
+        playerPropsContainer.innerHTML = `<div class="empty-state">DraftKings player props are quiet right now. Lines typically drop closer to tip-off/kickoff.</div>`;
         return;
       }
 
@@ -639,6 +550,7 @@
               <div class="metric"><span>Book</span><strong>${prop.bookmaker}</strong></div>
               <div class="metric"><span>Odds</span><strong>${prop.odds > 0 ? "+" + prop.odds : prop.odds}</strong></div>
               <div class="metric"><span>Implied Win Rate</span><strong>${formatPercent(prop.implied)}</strong></div>
+              <div class="metric"><span>Edge Rating</span><strong>${prop.edgeScore.toFixed(2)}</strong></div>
               <div class="metric"><span>Payout (\$100)</span><strong>${formatCurrency(prop.projectedPayout)}</strong></div>
             </div>
           </article>
@@ -648,8 +560,7 @@
     }
 
     function renderRequiresApiKey() {
-      const message = '<div class="empty-state">Enter your The Odds API key (top right) to pull in live straights, parlays, and props.</div>';
-      straightBetsContainer.innerHTML = message;
+      const message = '<div class="empty-state">Enter your The Odds API key (top right) to pull in live DraftKings props and parlays.</div>';
       parlayContainer.innerHTML = message;
       playerPropsContainer.innerHTML = message;
     }
@@ -669,13 +580,13 @@
     function setLoadingState(isLoading) {
       if (!apiKey) {
         refreshButton.disabled = true;
-        setStatus("Add your The Odds API key to fetch live odds.", "warning");
+        setStatus("Add your The Odds API key to fetch live DraftKings props.", "warning");
         return;
       }
 
       refreshButton.disabled = isLoading;
       if (isLoading) {
-        setStatus("Updating live board…", "loading");
+        setStatus("Updating live feed…", "loading");
       } else {
         setStatus(`Updated ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`);
       }
@@ -690,21 +601,6 @@
 
       setLoadingState(true);
 
-      const straightResults = await Promise.all(
-        SPORTS.map(async (sport) => {
-          const odds = await fetchOdds(sport.key, CORE_MARKETS);
-          const picks = extractBestPicks(odds, sport.label);
-          return picks;
-        })
-      );
-
-      const flattenedPicks = straightResults.flat();
-      renderStraightBets(flattenedPicks);
-
-      const parlayCandidates = flattenedPicks.slice(0, MAX_PICKS_PER_SPORT * 2);
-      const parlays = buildParlays(parlayCandidates, PARLAY_LEG_SIZE, MAX_PARLAYS);
-      renderParlays(parlays);
-
       const playerPropResults = await Promise.all(
         PLAYER_PROP_SPORTS.map(async (sport) => {
           const propsOdds = await fetchOdds(sport.key, ["player_props"]);
@@ -712,7 +608,12 @@
         })
       );
 
-      renderPlayerProps(playerPropResults.flat());
+      const allProps = playerPropResults.flat().sort((a, b) => b.edgeScore - a.edgeScore);
+      renderPlayerProps(allProps.slice(0, MAX_VISIBLE_PROPS));
+
+      const parlayCandidates = allProps.slice(0, PARLAY_CANDIDATE_POOL);
+      const parlays = buildParlays(parlayCandidates, PARLAY_LEG_SIZE, MAX_PARLAYS);
+      renderParlays(parlays);
 
       const now = new Date();
       lastUpdatedField.textContent = now.toLocaleString();
@@ -725,7 +626,7 @@
 
     if (!apiKey) {
       renderRequiresApiKey();
-      setStatus("Add your The Odds API key to fetch live odds.", "warning");
+      setStatus("Add your The Odds API key to fetch live DraftKings props.", "warning");
       refreshButton.disabled = true;
     } else {
       loadDashboard();

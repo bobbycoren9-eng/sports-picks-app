@@ -1,6 +1,6 @@
-# Sports Picks Intelligence Hub
+# DraftKings Player Prop Command Center
 
-This project is a single-page dashboard that pulls straight bets, parlay ideas, and player props from [The Odds API](https://the-odds-api.com/) and surfaces the best edges with implied probability and payout projections.
+This project is a single-page dashboard that locks onto DraftKings player props via [The Odds API](https://the-odds-api.com/) and automatically assembles high-upside bet builder cards with implied probability and payout projections.
 
 ## Prerequisites
 - A modern web browser (Chrome, Edge, Firefox, or Safari)
@@ -14,16 +14,15 @@ This project is a single-page dashboard that pulls straight bets, parlay ideas, 
    ```
 3. Open your browser to [http://localhost:8000/index.html](http://localhost:8000/index.html).
 4. Click **🔐 Set API Key** in the header and paste your The Odds API key.
-5. After saving the key the board will automatically fetch the latest straights, parlays, and props. You can click **🔄 Refresh Live Board** whenever you want to pull a fresh snapshot.
+5. After saving the key the board will automatically fetch the latest DraftKings props and parlay cards. You can click **🔄 Refresh Live Feed** whenever you want to pull a fresh snapshot.
 
-> **Tip:** Your API key is stored in `localStorage` so you only need to set it once per browser. If props are missing, verify that your API plan supports the `player_props` market and that the sportsbook you selected has props posted for the slate.
+> **Tip:** Your API key is stored in `localStorage` so you only need to set it once per browser. If props are missing, verify that your API plan supports the `player_props` market and that DraftKings has published lines for the slate.
 
 ## Customising the feed
-- Update the `BOOKMAKERS` array in `index.html` to control which books are queried.
-- Adjust `MAX_PICKS_PER_SPORT`, `PARLAY_LEG_SIZE`, or `MAX_PARLAYS` to change how many edges and parlays display.
-- Tune the `SPORTS` and `PLAYER_PROP_SPORTS` lists to cover the leagues you care about.
+- Update the `PLAYER_PROP_SPORTS` array in `index.html` to cover the leagues you care about.
+- Tweak `PARLAY_LEG_SIZE`, `MAX_PARLAYS`, `PARLAY_CANDIDATE_POOL`, or `MAX_VISIBLE_PROPS` to control how aggressive the bet builder and prop rail are.
 
 ## Troubleshooting
 - **No data / empty tiles:** Make sure your API key is correct and has enough remaining requests. The status indicator will warn you if a key is missing.
 - **CORS errors:** Use a local web server as shown above instead of opening the file directly with the `file://` protocol.
-- **Prop gaps:** Books typically post props closer to game time. Refresh later in the day or expand the sportsbook list to include operators that publish props earlier.
+- **Prop gaps:** DraftKings typically posts props closer to game time. Refresh later in the day or expand the league list if you are targeting additional slates.
